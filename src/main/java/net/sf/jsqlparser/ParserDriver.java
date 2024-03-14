@@ -1,60 +1,50 @@
+/*-
+ * #%L
+ * JSQLParser library
+ * %%
+ * Copyright (C) 2004 - 2024 JSQLParser
+ * %%
+ * Dual licensed under GNU LGPL 2.1 or Apache License 2.0
+ * #L%
+ */
 
 package net.sf.jsqlparser;
 
 
+import java.util.Scanner;
+
+import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.SelectItem;
-import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.expression.LongValue;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.schema.Column;
 
 public class ParserDriver {
     public static void main(String[] args) {
-        String sqlStr = "select 1 from dual where a=b";
-
-        try {
-            Statement statement = CCJSqlParserUtil.parse(sqlStr);
-            if (statement instanceof PlainSelect) {
-                PlainSelect select = (PlainSelect) statement;
-
-                // Access select items
-                SelectItem selectItem = select.getSelectItems().get(0);
-                if (selectItem.getExpression() instanceof LongValue) {
-                    LongValue longValue = (LongValue) selectItem.getExpression();
-                    if (longValue.getValue() == 1) {
-                        System.out.println("Select item is a LongValue of 1");
-                    } else {
-                        System.out.println("Select item is not a LongValue of 1");
-                    }
-                } else {
-                    System.out.println("Select item is not a LongValue");
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("Enter SQL Query");
+            String sqlStr = scanner.nextLine();
+    
+            try {
+                PlainSelect select = (PlainSelect) CCJSqlParserUtil.parse(sqlStr);
+                VisitorManager visitor = new VisitorManager();
+        
+                for (SelectItem selectItem : select.getSelectItems()) {
+                    selectItem.accept(visitor);
                 }
 
-                // Access table
-                Table table = (Table) select.getFromItem();
-                if ("dual".equalsIgnoreCase(table.getName())) {
-                    System.out.println("Table name is 'dual'");
-                } else {
-                    System.out.println("Table name is not 'dual'");
-                }
+                FromItem fromItem = select.getFromItem();
+                fromItem.accept(visitor);
 
-                // Access WHERE clause
-                EqualsTo equalsTo = (EqualsTo) select.getWhere();
-                Column a = (Column) equalsTo.getLeftExpression();
-                Column b = (Column) equalsTo.getRightExpression();
-                if ("a".equalsIgnoreCase(a.getColumnName()) && "b".equalsIgnoreCase(b.getColumnName())) {
-                    System.out.println("WHERE clause is 'a=b'");
-                } else {
-                    System.out.println("WHERE clause is not 'a=b'");
-                }
-            } else {
-                System.out.println("This example handles only SELECT statements.");
+                Expression where = select.getWhere();
+
+                System.out.println("WHERE: " + where);
+                
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }
