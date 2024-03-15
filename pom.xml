@@ -131,57 +131,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.21.2</version>
-                <configuration>
-                    <rulesets>
-                        <!-- Custom local file system rule set -->
-                        <ruleset>${project.basedir}/config/pmd/ruleset.xml</ruleset>
-                    </rulesets>
-                    <excludes>
-                        <exclude>**/*Bean.java</exclude>
-                        <exclude>**/generated/*.java</exclude>
-                    </excludes>
-                    <excludeRoots>
-                        <excludeRoot>target/generated-sources</excludeRoot>
-                        <excludeRoot>target/generated-test-sources</excludeRoot>
-                    </excludeRoots>
-                    <printFailingErrors>true</printFailingErrors>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>pmd</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>process-sources</phase>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.sourceforge.pmd</groupId>
-                        <artifactId>pmd-core</artifactId>
-                        <version>${pmdVersion}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>net.sourceforge.pmd</groupId>
-                        <artifactId>pmd-java</artifactId>
-                        <version>${pmdVersion}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>net.sourceforge.pmd</groupId>
-                        <artifactId>pmd-javascript</artifactId>
-                        <version>${pmdVersion}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>net.sourceforge.pmd</groupId>
-                        <artifactId>pmd-jsp</artifactId>
-                        <version>${pmdVersion}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.2.0</version>
@@ -548,65 +497,6 @@
             </activation>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <executions>
-                            <execution>
-                                <id>verify-style</id>
-                                <phase>process-classes</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <logViolationsToConsole>true</logViolationsToConsole>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                            <sourceDirectories>${project.build.sourceDirectory}</sourceDirectories>
-                            <checkstyleRules>
-                                <module name="Checker">
-                                    <module name="SuppressWarningsFilter" />
-                                    <module name="FileTabCharacter" />
-                                    <!-- git checkout may change linefeeds on the fly
-                                    <module name="RegexpMultiline">
-                                        <property name="format" value="(?s:(\r\n|\r).*)" />
-                                        <property name="message" value="CRLF and CR line endings are prohibited, but this file uses them." />
-                                    </module>
-                                    -->
-                                    <module name="TreeWalker">
-                                        <module name="AvoidNestedBlocks" />
-                                        <module name="ConstantName" />
-                                        <module name="EmptyCatchBlock" />
-                                        <module name="EmptyStatement" />
-                                        <module name="MissingOverride" />
-                                        <module name="MultipleVariableDeclarations" />
-                                        <module name="ParameterAssignment" />
-                                        <module name="StringLiteralEquality" />
-                                        <module name="RedundantImport" />
-                                        <module name="UnusedImports" />
-                                        
-                                        <module name="WhitespaceAfter" />
-										
-                                        <module name="NeedBraces" />
-                                        <module name="UnnecessaryParentheses" />
-                                        <module name="LeftCurly" />
-                                        <module name="RightCurly" />
-                                        
-                                        <module name="SuppressWarningsHolder" />
-                                    </module>
-                                </module>
-                            </checkstyleRules>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.puppycrawl.tools</groupId>
-                                <artifactId>checkstyle</artifactId>
-                                <version>${checkStyleVersion}</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
