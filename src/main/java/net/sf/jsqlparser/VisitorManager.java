@@ -10,6 +10,7 @@
 package net.sf.jsqlparser;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import net.sf.jsqlparser.expression.AllValue;
@@ -24,6 +25,7 @@ import net.sf.jsqlparser.expression.ConnectByRootOperator;
 import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.expression.ExtractExpression;
 import net.sf.jsqlparser.expression.Function;
@@ -77,6 +79,7 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.conditional.XorExpression;
 import net.sf.jsqlparser.expression.operators.relational.Between;
+import net.sf.jsqlparser.expression.operators.relational.ComparisonOperator;
 import net.sf.jsqlparser.expression.operators.relational.ContainedBy;
 import net.sf.jsqlparser.expression.operators.relational.Contains;
 import net.sf.jsqlparser.expression.operators.relational.DoubleAnd;
@@ -107,6 +110,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.FromItemVisitor;
+import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.LateralSubSelect;
 import net.sf.jsqlparser.statement.select.ParenthesedFromItem;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
@@ -121,11 +125,18 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
 
     RelAlgebra relAlg;
     List<String> colList;
+    List<String> tableList;
     Relation rel;
+    List<Predicate> predicates;
+    String selectTableName;
+    List<ComparisonOperator> operators;
 
     public VisitorManager(RelAlgebra relAlg) {
         this.relAlg = relAlg;
         this.colList = new ArrayList<>();
+        this.tableList = new ArrayList<>();
+        predicates = new ArrayList<>();
+        operators = new ArrayList<>();
         rel = null;
     }
 
@@ -138,8 +149,8 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
     @Override
     public void visit(Table tableName) {
         System.out.println("TABLE NAME: " + tableName);
-        relAlg.setTable(tableName.getName());
-        this.rel = relAlg.select(this.colList);
+        this.selectTableName = tableName.getName();
+        this.rel = relAlg.getNewRelation(this.selectTableName);
     }
 
     @Override
@@ -231,18 +242,21 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
     public void visit(OverlapsCondition overlapsCondition){}
 
     public void visit(EqualsTo equalsTo){
-        Predicate p = PredicateGenerator.createPredicate(rel, equalsTo);
-        this.rel = relAlg.where(rel, p);
+        Predicate p = PredicateGenerator.createPredicate(this.rel, equalsTo);
+        predicates.add(p);
+        operators.add(equalsTo);
     }
 
     public void visit(GreaterThan greaterThan){
-        Predicate p = PredicateGenerator.createPredicate(rel, greaterThan);
-        this.rel = relAlg.where(this.rel, p);
+        Predicate p = PredicateGenerator.createPredicate(this.rel, greaterThan);
+        predicates.add(p);
+        operators.add(greaterThan);
     }
 
     public void visit(GreaterThanEquals greaterThanEquals){
-        Predicate p = PredicateGenerator.createPredicate(rel, greaterThanEquals);
-        this.rel = relAlg.where(rel, p);
+        Predicate p = PredicateGenerator.createPredicate(this.rel, greaterThanEquals);
+        predicates.add(p);
+        operators.add(greaterThanEquals);
     }
 
     public void visit(InExpression inExpression){}
@@ -262,18 +276,21 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
     }
 
     public void visit(MinorThan minorThan){
-        Predicate p = PredicateGenerator.createPredicate(rel, minorThan);
-        this.rel = relAlg.where(rel, p);
+        Predicate p = PredicateGenerator.createPredicate(this.rel, minorThan);
+        predicates.add(p);
+        operators.add(minorThan);
     }
 
     public void visit(MinorThanEquals minorThanEquals){
-        Predicate p = PredicateGenerator.createPredicate(rel, minorThanEquals);
-        this.rel = relAlg.where(rel, p);
+        Predicate p = PredicateGenerator.createPredicate(this.rel, minorThanEquals);
+        predicates.add(p);
+        operators.add(minorThanEquals);
     }
 
     public void visit(NotEqualsTo notEqualsTo){
-        Predicate p = PredicateGenerator.createPredicate(rel, notEqualsTo);
-        this.rel = relAlg.where(rel, p);
+        Predicate p = PredicateGenerator.createPredicate(this.rel, notEqualsTo);
+        predicates.add(p);
+        operators.add(notEqualsTo);
     }
 
     public void visit(DoubleAnd doubleAnd){}
@@ -415,6 +432,22 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
     public void visit(TSQLLeftJoin tsqlLeftJoin){}
 
     public void visit(TSQLRightJoin tsqlRightJoin){}
+
+    public void processQuery() {
+        this.rel = relAlg.select(this.rel, this.colList);
+        for (String table : tableList) {
+            this.rel = relAlg.join(this.rel, table);
+        }
+
+        for (ComparisonOperator operator : operators) {
+            Predicate p = PredicateGenerator.createPredicate(this.rel, operator);
+            this.rel = relAlg.where(this.rel, p);
+        }
+    }
+
+    public void addJoinItem(Join joinItem) {
+        tableList.add(joinItem.getRightItem().toString());
+    }
 
     public Relation getRel() {
         return this.rel;
