@@ -12,6 +12,7 @@ package net.sf.relational_algebra.uga.cs4370.mydbimpl;
 import java.util.List;
 
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.operators.relational.ComparisonOperator;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
 import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals;
@@ -31,11 +32,16 @@ public class PredicateGenerator {
         Predicate pred = new Predicate(){
             @Override
             public boolean check(List<Cell> row) {
-                int attrIndex = rel.getAttrIndex(leftExpression);
-                Cell cell = row.get(attrIndex);
-                double value = (Double) cell.getAsDouble();
-                Boolean ans = value > Double.parseDouble(rightExpression);
-                return ans;
+                if (rel == null) {
+                    System.out.println("RELATION IS NULL IN PREDICATE");
+                } else {
+                    int attrIndex = rel.getAttrIndex(leftExpression);
+                    Cell cell = row.get(attrIndex);
+                    double value = (Double) cell.getAsDouble();
+                    Boolean ans = value > Double.parseDouble(rightExpression);
+                    return ans;
+                }
+                return false;
             }
         };
         
@@ -84,7 +90,7 @@ public class PredicateGenerator {
         String leftExpression = leq.getLeftExpression().toString();
         String rightExpression = leq.getRightExpression().toString();
 
-        Predicate pred = new Predicate(){
+        Predicate pred = new Predicate() {
             @Override
             public boolean check(List<Cell> row) {
                 int attrIndex = rel.getAttrIndex(leftExpression);
@@ -133,6 +139,115 @@ public class PredicateGenerator {
         };
         
         return pred;
+    }
+
+    public static Predicate createPredicate(Relation rel, ComparisonOperator operator) {
+        if (operator instanceof EqualsTo) {
+
+            String leftExpression = operator.getLeftExpression().toString();
+            String rightExpression = operator.getRightExpression().toString();
+    
+            Predicate pred = new Predicate(){
+                @Override
+                public boolean check(List<Cell> row) {
+                    int attrIndex = rel.getAttrIndex(leftExpression);
+                    Cell cell = row.get(attrIndex);
+                    String value = cell.getAsString();
+                    Boolean ans = value.equals(rightExpression);
+                    return ans;
+                }
+            };
+            return pred;
+
+        } else if (operator instanceof NotEqualsTo) {
+            
+            String leftExpression = operator.getLeftExpression().toString();
+            String rightExpression = operator.getRightExpression().toString();
+    
+            Predicate pred = new Predicate(){
+                @Override
+                public boolean check(List<Cell> row) {
+                    int attrIndex = rel.getAttrIndex(leftExpression);
+                    Cell cell = row.get(attrIndex);
+                    String value = cell.getAsString();
+                    Boolean ans = value.equals(rightExpression);
+                    return !ans;
+                }
+            };
+            return pred;
+
+        } else if (operator instanceof GreaterThan) {
+            String leftExpression = operator.getLeftExpression().toString();
+            String rightExpression = operator.getRightExpression().toString();
+    
+            Predicate pred = new Predicate(){
+                @Override
+                public boolean check(List<Cell> row) {
+                    if (rel == null) {
+                        System.out.println("RELATION IS NULL IN PREDICATE");
+                    } else {
+                        int attrIndex = rel.getAttrIndex(leftExpression);
+                        Cell cell = row.get(attrIndex);
+                        double value = (Double) cell.getAsDouble();
+                        Boolean ans = value > Double.parseDouble(rightExpression);
+                        return ans;
+                    }
+                    return false;
+                }
+            };
+            return pred;
+        } else if (operator instanceof GreaterThanEquals) {
+            String leftExpression = operator.getLeftExpression().toString();
+            String rightExpression = operator.getRightExpression().toString();
+    
+            Predicate pred = new Predicate(){
+                @Override
+                public boolean check(List<Cell> row) {
+                    int attrIndex = rel.getAttrIndex(leftExpression);
+                    Cell cell = row.get(attrIndex);
+                    double value = (Double) cell.getAsDouble();
+                    Boolean ans = value >= Double.parseDouble(rightExpression);
+                    return ans;
+                }
+            };
+            
+            return pred;
+        } else if (operator instanceof MinorThan) {
+            String leftExpression = operator.getLeftExpression().toString();
+            String rightExpression = operator.getRightExpression().toString();
+    
+            Predicate pred = new Predicate(){
+                @Override
+                public boolean check(List<Cell> row) {
+                    int attrIndex = rel.getAttrIndex(leftExpression);
+                    Cell cell = row.get(attrIndex);
+                    double value = (Double) cell.getAsDouble();
+                    Boolean ans = value < Double.parseDouble(rightExpression);
+                    return ans;
+                }
+            };
+            
+            return pred;
+        } else if (operator instanceof MinorThanEquals) {
+            String leftExpression = operator.getLeftExpression().toString();
+            String rightExpression = operator.getRightExpression().toString();
+    
+            Predicate pred = new Predicate() {
+                @Override
+                public boolean check(List<Cell> row) {
+                    int attrIndex = rel.getAttrIndex(leftExpression);
+                    Cell cell = row.get(attrIndex);
+                    double value = (Double) cell.getAsDouble();
+                    Boolean ans = value <= Double.parseDouble(rightExpression);
+                    return ans;
+                }
+            };
+            
+            return pred;
+        } else {
+            System.out.println("OPERATOR NOT INSTANCE OF ANYTHING.");
+            return null;
+        }
     }
 
 
