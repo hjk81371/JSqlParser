@@ -221,45 +221,44 @@ public class Implementation implements RA {
      */
     @Override
     public Relation cartesianProduct(Relation rel1, Relation rel2) {
-        if (rel1.getAttrs().equals(rel2.getAttrs())) {
-            List<String> attrs = new ArrayList<>();
-            attrs.addAll(rel1.getAttrs());
-            List<String> rel2Attributes = rel2.getAttrs();
-            
-            // ensure no duplicate attribute names
-            for (int i = 0; i < rel2Attributes.size(); i++) {
-                if (attrs.contains(rel2Attributes.get(i))) {
-                    String currName = rel2Attributes.get(i);
-                    String newName = currName + "_rel_2";
-                    rel2Attributes.remove(i);
-                    rel2Attributes.add(i, newName);
-                }
-            } // for
-
-            attrs.addAll(rel2Attributes);
-            List<Type> types = new ArrayList<>();
-            types.addAll(rel1.getTypes());
-            types.addAll(rel2.getTypes());
-
-            Relation newRel = new RelationBuilder().attributeNames(attrs).attributeTypes(types).build();
-            for (int i = 0; i < rel1.getSize(); i++) {
-                for (int j = 0; j < rel2.getSize(); j++) {
-                    List<Cell> rel1Row = rel1.getRow(i);
-                    List<Cell> rel2Row = rel2.getRow(j);
-                    List<Cell> combinedRows = new ArrayList<>();
-                    combinedRows.addAll(rel1Row);
-                    combinedRows.addAll(rel2Row);
-                    newRel.insert(combinedRows);
+        List<String> attrs = new ArrayList<>();
+        attrs.addAll(rel1.getAttrs());
+        // Add attributes from rel2, renaming duplicates
+        for (String attr : rel2.getAttrs()) {
+            String renamedAttr = attr;
+            if (attrs.contains(attr)) {
+                // Attribute name already exists, rename it
+                renamedAttr = "rel2_" + attr;
+                int count = 1;
+                // Ensure the new name is unique
+                while (attrs.contains(renamedAttr)) {
+                    renamedAttr = "rel2_" + attr + "_" + count;
+                    count++;
                 }
             }
-
-        /*
-         * Every possible combination of joining rel1 and rel2.
-         */
-            return newRel;
-        } else {
-            throw new IllegalArgumentException("rel1 and rel2 have common attibutes.");
+            attrs.add(renamedAttr);
+        }   
+        List<Type> types = new ArrayList<>();
+        types.addAll(rel1.getTypes());
+        types.addAll(rel2.getTypes());
+    
+        Relation newRel = new RelationBuilder().attributeNames(attrs).attributeTypes(types).build();
+    
+        // Iterate through rows of both relations and combine each row from rel1 with every row from rel2
+        for (int i = 0; i < rel1.getSize(); i++) {
+            for (int j = 0; j < rel2.getSize(); j++) {
+                List<Cell> rel1Row = rel1.getRow(i);
+                List<Cell> rel2Row = rel2.getRow(j);
+    
+                List<Cell> combinedRows = new ArrayList<>();
+                combinedRows.addAll(rel1Row);
+                combinedRows.addAll(rel2Row);
+    
+                newRel.insert(combinedRows);
+            }
         }
+    
+        return newRel;
     }
 
     /**
@@ -271,51 +270,63 @@ public class Implementation implements RA {
     public Relation join(Relation rel1, Relation rel2) {
         List<String> attrs = new ArrayList<>();
         attrs.addAll(rel1.getAttrs());
-        List<String> rel2Attributes = rel2.getAttrs();
-        
-        // The attribute to join on
-        String joinOnAttr = null;
-
-        // ensure no duplicate attribute names
-        for (int i = 0; i < rel2Attributes.size(); i++) {
-
-            if (attrs.contains(rel2Attributes.get(i))) {
-                // Join on the first common attr, rename all common attrs
-                // The "join on" attr is still renamed and added, it's removed later with project
-                if (joinOnAttr == null) {
-                    joinOnAttr = rel2Attributes.get(i);
+            // Add attributes from rel2, renaming duplicates
+        for (String attr : rel2.getAttrs()) {
+            String renamedAttr = attr;
+            if (attrs.contains(attr)) {
+                // Attribute name already exists, rename it
+                renamedAttr = "rel2_" + attr;
+                int count = 1;
+                // Ensure the new name is unique
+                while (attrs.contains(renamedAttr)) {
+                    renamedAttr = "rel2_" + attr + "_" + count;
+                    count++;
                 }
-
-                String currName = rel2Attributes.get(i);
-                String newName = currName + "_rel_2";
-                rel2Attributes.remove(i);
-                rel2Attributes.add(i, newName);
             }
-        } // for
-
-        // If there is no common attribute between the two tables, return the cartesian product
-        if (joinOnAttr == null) {
-            return cartesianProduct(rel1, rel2);
+            attrs.add(renamedAttr);
         }
 
-        attrs.addAll(rel2Attributes);
+    
+        // Find common attributes between the two tables
+        List<String> commonAttrs = new ArrayList<>(rel1.getAttrs());
+        commonAttrs.retainAll(rel2.getAttrs());
 
+        for (String att : commonAttrs) {
+            System.out.println("COMMON ATTRIBUTE: " + att);
+        }
+    
+        // If there are no common attributes, perform a cartesian product
+        if (commonAttrs.isEmpty()) {
+            return cartesianProduct(rel1, rel2);
+        }
+    
+        // Perform natural join on the common attributes
         List<Type> types = new ArrayList<>();
         types.addAll(rel1.getTypes());
         types.addAll(rel2.getTypes());
-
-        int attrIndex_rel1 = rel1.getAttrIndex(joinOnAttr);
-        int attrIndex_rel2 = rel2.getAttrIndex(joinOnAttr);
-
-        // Make new rel and fill it with old rows
+    
+        // Make new relation with combined attributes
         Relation newRel = new RelationBuilder().attributeNames(attrs).attributeTypes(types).build();
+    
+        // Iterate through rows of both relations and combine rows with matching common attribute values
         for (int i = 0; i < rel1.getSize(); i++) {
             for (int j = 0; j < rel2.getSize(); j++) {
                 List<Cell> rel1Row = rel1.getRow(i);
                 List<Cell> rel2Row = rel2.getRow(j);
-
-                // If the two rows are identical on the joined attr, add them
-                if (rel1Row.get(attrIndex_rel1).equals(rel2Row.get(attrIndex_rel2))) {
+    
+                // Check if rows match on all common attributes
+                boolean match = true;
+                for (String attr : commonAttrs) {
+                    int index1 = rel1.getAttrIndex(attr);
+                    int index2 = rel2.getAttrIndex(attr);
+                    if (!rel1Row.get(index1).equals(rel2Row.get(index2))) {
+                        match = false;
+                        break;
+                    }
+                }
+    
+                // If rows match on all common attributes, combine them
+                if (match) {
                     List<Cell> combinedRows = new ArrayList<>();
                     combinedRows.addAll(rel1Row);
                     combinedRows.addAll(rel2Row);
@@ -323,13 +334,7 @@ public class Implementation implements RA {
                 }
             }
         }
-
-        // Project to remove duplicate column
-        List<String> newAttrs = new ArrayList<>();
-        newAttrs.addAll(attrs);
-        newAttrs.remove(joinOnAttr + "_rel_2");
-
-        newRel = project(newRel, newAttrs);
+    
         return newRel;
     }
 

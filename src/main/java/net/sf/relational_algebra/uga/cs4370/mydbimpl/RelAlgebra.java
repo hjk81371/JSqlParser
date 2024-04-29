@@ -53,7 +53,7 @@ public class RelAlgebra {
         if (tableName.equals("advisor")) {
 
             newRel = new RelationBuilder()
-            .attributeNames(List.of("s_ID", "i_ID"))
+            .attributeNames(List.of("student_id", "instructor_id"))
             .attributeTypes(List.of(Type.INTEGER, Type.INTEGER))
             .build();
             
@@ -81,7 +81,7 @@ public class RelAlgebra {
 
         } else if (tableName.equals("instructor")) {
             newRel = new RelationBuilder()
-            .attributeNames(List.of("id", "name", "dept", "salary"))
+            .attributeNames(List.of("instructor_id", "name", "dept_name", "salary"))
             .attributeTypes(List.of(Type.INTEGER, Type.STRING, Type.STRING, Type.DOUBLE))
             .build();
             
@@ -100,7 +100,7 @@ public class RelAlgebra {
         } else if (tableName.equals("student")) {
 
         newRel = new RelationBuilder()
-        .attributeNames(List.of("id", "name", "dept_name", "tot_cred"))
+        .attributeNames(List.of("student_id", "name", "dept_name", "tot_cred"))
         .attributeTypes(List.of(Type.INTEGER, Type.STRING, Type.STRING, Type.DOUBLE))
         .build();
         

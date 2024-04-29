@@ -434,7 +434,6 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
     public void visit(TSQLRightJoin tsqlRightJoin){}
 
     public void processQuery() {
-        this.rel = relAlg.select(this.rel, this.colList);
         for (String table : tableList) {
             this.rel = relAlg.join(this.rel, table);
         }
@@ -443,6 +442,7 @@ public class VisitorManager implements SelectItemVisitor, FromItemVisitor, Expre
             Predicate p = PredicateGenerator.createPredicate(this.rel, operator);
             this.rel = relAlg.where(this.rel, p);
         }
+        this.rel = relAlg.select(this.rel, this.colList);
     }
 
     public void addJoinItem(Join joinItem) {
